@@ -3,12 +3,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../models/player_transfer_detail.dart';
 import '../../service/api_service.dart';
 import 'transfer_state.dart';
+import '../../../app_resource/competition_ids.dart';
 
 class TransferCubit extends Cubit<TransferState> {
   final ApiService apiService;
   final List<String> competitionIds;
   final List<PlayerTransferDetail> _transfers = [];
   String selectedSeason = '24/25';
+  Set<String> selectedLeagues = {};
   List<String> selectedClubName = [];
   final int _limit = 20;
   final TextEditingController searchController = TextEditingController();
@@ -35,6 +37,44 @@ class TransferCubit extends Cubit<TransferState> {
     searchFocusNode.addListener(() {
       emit(state.copyWith(isSearchFocused: searchFocusNode.hasFocus));
     });
+  }
+
+  bool _matchesSelectedLeagues(String? fromCompetition, String? toCompetition) {
+    if (selectedLeagues.isEmpty) {
+      return true;
+    }
+
+
+    Set<String> selectedCompetitionIds = {};
+    for (String league in selectedLeagues) {
+      String? competitionId = leagueToCompetitionId[league];
+      if (competitionId != null) {
+        selectedCompetitionIds.add(competitionId);
+      }
+    }
+
+    bool matchesFrom = fromCompetition != null && selectedCompetitionIds.contains(fromCompetition);
+    bool matchesTo = toCompetition != null && selectedCompetitionIds.contains(toCompetition);
+
+    return matchesFrom || matchesTo;
+  }
+
+
+  List<String> _getFilteredCompetitionIds() {
+
+    if (selectedLeagues.isEmpty) {
+      return competitionIds;
+    }
+
+    List<String> filteredIds = [];
+    for (String league in selectedLeagues) {
+      String? competitionId = leagueToCompetitionId[league];
+      if (competitionId != null && competitionIds.contains(competitionId)) {
+        filteredIds.add(competitionId);
+      }
+    }
+
+    return filteredIds.isNotEmpty ? filteredIds : competitionIds;
   }
 
   Future<void> closeTextFaild() {
@@ -91,19 +131,19 @@ class TransferCubit extends Cubit<TransferState> {
         _offset += _limit;
 
         for (final transfer in rawTransfers) {
-          final history =
-          await apiService.getPlayerTransferHistory(transfer.playerID);
+          final history = await apiService.getPlayerTransferHistory(transfer.playerID);
 
           for (final detail in history) {
             final matchesSeason = selectedSeason.isEmpty || detail.season == selectedSeason;
 
-            // Removed 'league' filtering — no such data in API response.
             final matchesClub = selectedClubName.isEmpty ||
                 selectedClubName.any((club) =>
-                detail.newClubName!.toLowerCase().contains(club.toLowerCase()) ||
-                    detail.oldClubName!.toLowerCase().contains(club.toLowerCase()));
+                detail.newClubName.toLowerCase().contains(club.toLowerCase()) ||
+                    detail.oldClubName.toLowerCase().contains(club.toLowerCase()));
 
-            final shouldInclude = !_isSearching && matchesSeason && matchesClub;
+            final matchesLeague = _matchesSelectedLeagues(detail.fromCompetition, detail.toCompetition);
+
+            final shouldInclude = !_isSearching && matchesSeason && matchesClub && matchesLeague;
 
             if (shouldInclude) {
               _transfers.add(PlayerTransferDetail(
@@ -111,7 +151,7 @@ class TransferCubit extends Cubit<TransferState> {
                 newClubCountryImage: detail.newClubCountryImage,
                 oldClubName: detail.oldClubName,
                 newClubName: detail.newClubName,
-                transferFeeValue: detail.transferFeeValue!.isNotEmpty
+                transferFeeValue: detail.transferFeeValue.isNotEmpty
                     ? detail.transferFeeValue
                     : '?',
                 transferFeeCurrency: detail.transferFeeCurrency,
@@ -119,6 +159,8 @@ class TransferCubit extends Cubit<TransferState> {
                 countryImage: detail.countryImage,
                 date: detail.date,
                 season: detail.season,
+                fromCompetition: detail.fromCompetition,
+                toCompetition: detail.toCompetition,
               ));
             }
           }
@@ -209,6 +251,8 @@ class TransferCubit extends Cubit<TransferState> {
         selectedSeason = '';
       }
     }
+
+    selectedLeagues = leagues;
     selectedClubName = clubName;
     loadInitialTransfers();
   }

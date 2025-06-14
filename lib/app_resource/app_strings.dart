@@ -15,6 +15,7 @@ class AppStrings {
       'Step into the world of football transfers! Test\nyour knowledge by arranging top players based\non their market value and stay updated with the\nlatest transfer news.';
   static const String check = 'Check';
   static const String newText = 'New';
+  static const String newQuiz = 'New Quiz';
   static const String playersInTheQuizWill =
       'Players in the quiz will be only from the selected\nleagues.';
   static const String squadRanker = 'Squad Ranker';

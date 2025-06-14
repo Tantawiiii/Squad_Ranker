@@ -13,4 +13,7 @@ class AppImages {
   static const String iconSearch = '$_pathImages/icon_search.png';
   static const String filterIcon = '$_pathImages/filter_icon.png';
   static const String iconClear = '$_pathImages/icon_clear.png';
+
+
+  static const String tShirtNum = '$_pathImages/tshirt_num.svg';
 }

@@ -12,6 +12,46 @@ class ApiService {
     },
   ));
 
+  Future<Map<String, dynamic>?> getPlayerHeaderInfo(int playerId) async {
+    try {
+      final response = await _dio.get(
+        'players/get-header-info',
+        queryParameters: {
+          'id': playerId,
+        },
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        return response.data;
+      }
+    } catch (e) {
+      print('Error in getPlayerHeaderInfo: $e');
+    }
+
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> getPlayerProfile(String playerId) async {
+    try {
+      final response = await _dio.get(
+        'players/get-profile',
+        queryParameters: {
+          'id': int.parse(playerId),
+        },
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        return response.data;
+      }
+    } catch (e) {
+      print('Error in get-profile: $e');
+    }
+
+    return null;
+  }
+
+
+
   Future<List<Transfer>> fetchTransfersFromLeagues({
     required List<String> leagueIds,
     required int limit,
@@ -46,11 +86,32 @@ class ApiService {
     return null;
   }
 
+  Future<Map<String, dynamic>?> getPlayersShortInfoByIds(List<int> playerIds) async {
+    try {
+      String idsString = playerIds.map((id) => id.toString()).join(',');
+
+      final response = await _dio.get(
+        'players/get-short-info',
+        queryParameters: {
+          'ids': idsString,
+        },
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        return response.data;
+      }
+    } catch (e) {
+      print('Error in getPlayersShortInfoByIds: $e');
+    }
+
+    return null;
+  }
+
   Future<List<PlayerTransferDetail>> getPlayerTransferHistory(
       String playerId) async {
     final response =
         await _dio.get('players/get-transfer-history', queryParameters: {
-      'id': playerId,
+      'id': int.parse(playerId),
       'domain': 'en',
     });
 

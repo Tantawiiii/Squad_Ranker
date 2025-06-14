@@ -1,3 +1,4 @@
+import 'package:app_b_804/screens/player_details/player_details_screen.dart';
 import 'package:flutter/material.dart';
 
 import '../../screens/home/home_screen.dart';
@@ -9,15 +10,33 @@ import '../../screens/transfers/transfers_screen.dart';
 import '../../screens/tutorial/tutorial_screen.dart';
 import '../../screens/welcome/welcome_screen.dart';
 
+
 class AppRoute {
-  static Map<String, Widget Function(BuildContext)> routes = {
-    '/': (context) => const PreloaderScreen(),
-    'welcomeScreen': (context) => const WelcomeScreen(),
-    'homeScreen': (context) => const HomeScreen(),
-    'settingsScreen': (context) => const SettingsScreen(),
-    'transfersScreen': (context) => const TransferScreen(),
-    'leaguesScreen': (context) => const LeaguesScreen(),
-    'quizScreen': (context) => const QuizScreen(),
-    'tutorialScreen': (context) => const TutorialScreen(),
-  };
+  static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
+    switch (settings.name) {
+      case '/':
+        return MaterialPageRoute(builder: (_) => const PreloaderScreen());
+      case 'welcomeScreen':
+        return MaterialPageRoute(builder: (_) => const WelcomeScreen());
+      case 'homeScreen':
+        return MaterialPageRoute(builder: (_) => const HomeScreen());
+      case 'settingsScreen':
+        return MaterialPageRoute(builder: (_) => const SettingsScreen());
+      case 'transfersScreen':
+        return MaterialPageRoute(builder: (_) => const TransferScreen());
+      case 'leaguesScreen':
+        return MaterialPageRoute(builder: (_) => const LeaguesScreen());
+      case 'quizScreen':
+        return MaterialPageRoute(builder: (_) => const QuizScreen());
+      case 'tutorialScreen':
+        return MaterialPageRoute(builder: (_) => const TutorialScreen());
+      case 'playerDetails':
+        final playerId = settings.arguments as String;
+        return MaterialPageRoute(
+          builder: (_) => PlayerDetailsScreen(playerId: playerId),
+        );
+    }
+    return null;
+  }
 }
+
