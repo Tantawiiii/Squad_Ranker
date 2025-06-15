@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../app_resource/app_strings.dart';
+import '../../core/cubits/quizCubit/quiz_cubit.dart';
 import '../../core/database/database.dart';
 import '../../widgets/app_bar.dart';
 import 'widgets/coins_row.dart';
@@ -12,15 +14,17 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final totalScore = context.read<QuizCubit>().score;
+
     return Scaffold(
       body: Column(
         children: [
-          const CustomAppBar(
+          CustomAppBar(
             leftPadding: 0,
             leftWidget: CoinsRow(
-              coins: '1000',
+              coins: "$totalScore",
             ),
-            rightWidget: SettingsContainer(),
+            rightWidget: const SettingsContainer(),
           ),
           StartContainer(
             leagueOntap: () {

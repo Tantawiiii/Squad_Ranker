@@ -9,8 +9,8 @@ class PlayerTransferDetail {
   final String transferFeeValue;
   final String? transferFeeCurrency;
   final String? transferFeeNumeral;
-  final String? fromCompetition;
-  final String? toCompetition;
+  final String? fromCompetitionID;
+  final String? toCompetitionID;
   final String? playerName;
   final String? playerImage;
   final String? countryID;
@@ -32,8 +32,8 @@ class PlayerTransferDetail {
     required this.transferFeeValue,
     this.transferFeeCurrency,
     this.transferFeeNumeral,
-     this.fromCompetition,
-     this.toCompetition,
+     this.fromCompetitionID,
+     this.toCompetitionID,
     this.playerName,
     this.playerImage,
     this.countryID,
@@ -57,8 +57,8 @@ class PlayerTransferDetail {
       transferFeeValue: json['transferFeeValue'] ?? '',
       transferFeeCurrency: json['transferFeeCurrency'],
       transferFeeNumeral: json['transferFeeNumeral'],
-      fromCompetition: json['fromCompetitionID'] ?? '',
-      toCompetition: json['toCompetitionID'] ?? '',
+      fromCompetitionID: json['fromCompetitionID'] ?? '',
+      toCompetitionID: json['toCompetitionID'] ?? '',
       playerName: json['playerName'],
       playerImage: json['playerImage'],
       countryID: json['countryID'],
@@ -70,4 +70,18 @@ class PlayerTransferDetail {
       newClubCountryImage: json['newClubCountryImage'],
     );
   }
+
+  String? get formattedDate {
+    try {
+      final parts = date!.split('.');
+      if (parts.length == 3) {
+        final day = parts[0].padLeft(2, '0');
+        final month = parts[1].padLeft(2, '0');
+        final year = parts[2].substring(2);
+        return '$day.$month.$year';
+      }
+    } catch (_) {}
+    return date;
+  }
+
 }

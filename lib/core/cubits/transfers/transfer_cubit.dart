@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../app_resource/competition_ids.dart';
 import '../../models/player_transfer_detail.dart';
 import '../../service/api_service.dart';
 import 'transfer_state.dart';
-import '../../../app_resource/competition_ids.dart';
 
 class TransferCubit extends Cubit<TransferState> {
   final ApiService apiService;
-  final List<String> competitionIds;
-  final List<PlayerTransferDetail> _transfers = [];
-  String selectedSeason = '24/25';
+  final List<String> allCompetitionIds;
+  Set<String> selectedCompetitionIds = {};
+  List<PlayerTransferDetail> _transfers = [];
+  String selectedSeason = '';
   Set<String> selectedLeagues = {};
   List<String> selectedClubName = [];
   final int _limit = 20;
   final TextEditingController searchController = TextEditingController();
   final FocusNode searchFocusNode = FocusNode();
   bool _isSearching = false;
-  int _currentLeagueIndex = 0;
+  int _currentCompetitionIndex = 0;
   int _offset = 0;
   bool _hasMore = true;
   bool _showLoadMore = false;
@@ -29,7 +30,10 @@ class TransferCubit extends Cubit<TransferState> {
   bool get showLoadMore => _showLoadMore;
   bool get isLoadingMore => _isLoadingMore;
 
-  TransferCubit(this.apiService, this.competitionIds) : super(TransferState()) {
+  TransferCubit(this.apiService, this.allCompetitionIds) : super(TransferState()) {
+    // Initialize with all competition IDs
+    selectedCompetitionIds = allCompetitionIds.toSet();
+
     searchController.addListener(() {
       searchTransfersByName(searchController.text);
     });
@@ -39,52 +43,15 @@ class TransferCubit extends Cubit<TransferState> {
     });
   }
 
-  bool _matchesSelectedLeagues(String? fromCompetition, String? toCompetition) {
-    if (selectedLeagues.isEmpty) {
-      return true;
-    }
-
-
-    Set<String> selectedCompetitionIds = {};
-    for (String league in selectedLeagues) {
-      String? competitionId = leagueToCompetitionId[league];
-      if (competitionId != null) {
-        selectedCompetitionIds.add(competitionId);
-      }
-    }
-
-    bool matchesFrom = fromCompetition != null && selectedCompetitionIds.contains(fromCompetition);
-    bool matchesTo = toCompetition != null && selectedCompetitionIds.contains(toCompetition);
-
-    return matchesFrom || matchesTo;
-  }
-
-
-  List<String> _getFilteredCompetitionIds() {
-
-    if (selectedLeagues.isEmpty) {
-      return competitionIds;
-    }
-
-    List<String> filteredIds = [];
-    for (String league in selectedLeagues) {
-      String? competitionId = leagueToCompetitionId[league];
-      if (competitionId != null && competitionIds.contains(competitionId)) {
-        filteredIds.add(competitionId);
-      }
-    }
-
-    return filteredIds.isNotEmpty ? filteredIds : competitionIds;
-  }
-
-  Future<void> closeTextFaild() {
+  @override
+  Future<void> close() {
     searchController.dispose();
     searchFocusNode.dispose();
     return super.close();
   }
 
   void loadInitialTransfers() {
-    _currentLeagueIndex = 0;
+    _currentCompetitionIndex = 0;
     _offset = 0;
     _hasMore = true;
     _showLoadMore = false;
@@ -108,22 +75,28 @@ class TransferCubit extends Cubit<TransferState> {
   }
 
   Future<void> _loadTransfers() async {
-    if (_isLoading || _currentLeagueIndex >= competitionIds.length) return;
+    if (_isLoading || _currentCompetitionIndex >= selectedCompetitionIds.length) {
+      return;
+    }
 
     _isLoading = true;
     emit(state.copyWith(status: TransferStatus.loading, transfers: _transfers));
 
     try {
-      while (_currentLeagueIndex < competitionIds.length) {
-        final leagueId = competitionIds[_currentLeagueIndex];
+      // Convert set to list for indexing
+      final competitionIdsList = selectedCompetitionIds.toList();
+
+      while (_currentCompetitionIndex < competitionIdsList.length) {
+        final competitionId = competitionIdsList[_currentCompetitionIndex];
+
         final rawTransfers = await apiService.fetchTransfersFromLeagues(
-          leagueIds: [leagueId],
+          leagueIds: [competitionId],
           limit: _limit,
           offset: _offset,
         );
 
         if (rawTransfers.isEmpty) {
-          _currentLeagueIndex++;
+          _currentCompetitionIndex++;
           _offset = 0;
           continue;
         }
@@ -134,43 +107,41 @@ class TransferCubit extends Cubit<TransferState> {
           final history = await apiService.getPlayerTransferHistory(transfer.playerID);
 
           for (final detail in history) {
-            final matchesSeason = selectedSeason.isEmpty || detail.season == selectedSeason;
 
-            final matchesClub = selectedClubName.isEmpty ||
-                selectedClubName.any((club) =>
-                detail.newClubName.toLowerCase().contains(club.toLowerCase()) ||
-                    detail.oldClubName.toLowerCase().contains(club.toLowerCase()));
-
-            final matchesLeague = _matchesSelectedLeagues(detail.fromCompetition, detail.toCompetition);
-
-            final shouldInclude = !_isSearching && matchesSeason && matchesClub && matchesLeague;
-
-            if (shouldInclude) {
-              _transfers.add(PlayerTransferDetail(
-                playerID: detail.playerID,
-                newClubCountryImage: detail.newClubCountryImage,
-                oldClubName: detail.oldClubName,
-                newClubName: detail.newClubName,
-                transferFeeValue: detail.transferFeeValue.isNotEmpty
-                    ? detail.transferFeeValue
-                    : '?',
-                transferFeeCurrency: detail.transferFeeCurrency,
-                playerName: detail.playerName,
-                countryImage: detail.countryImage,
-                date: detail.date,
-                season: detail.season,
-                fromCompetition: detail.fromCompetition,
-                toCompetition: detail.toCompetition,
-              ));
+            if (selectedSeason.isNotEmpty && detail.season != selectedSeason) {
+              continue;
             }
+
+            if (selectedClubName.isNotEmpty &&
+                !selectedClubName.any((club) =>
+                detail.newClubName.toLowerCase().contains(club.toLowerCase()) ||
+                    detail.oldClubName.toLowerCase().contains(club.toLowerCase()))) {
+              continue;
+            }
+
+            _transfers.add(PlayerTransferDetail(
+              playerID: detail.playerID,
+              newClubCountryImage: detail.newClubCountryImage,
+              oldClubName: detail.oldClubName,
+              newClubName: detail.newClubName,
+              transferFeeValue: detail.transferFeeValue.isNotEmpty
+                  ? detail.transferFeeValue
+                  : '?',
+              transferFeeCurrency: detail.transferFeeCurrency,
+              playerName: detail.playerName,
+              countryImage: detail.countryImage,
+              date: detail.date,
+              season: detail.season,
+            ));
           }
         }
+
+        _currentCompetitionIndex++;
         break;
       }
 
-      _transfers.sort(
-            (a, b) => _parseDate(b.date!).compareTo(_parseDate(a.date!)),
-      );
+      // Sort by date
+      _transfers.sort((a, b) => _parseDate(b.date!).compareTo(_parseDate(a.date!)));
 
       emit(state.copyWith(
         status: TransferStatus.loaded,
@@ -184,6 +155,9 @@ class TransferCubit extends Cubit<TransferState> {
     } finally {
       _isLoading = false;
       _isLoadingMore = false;
+      if (_currentCompetitionIndex >= selectedCompetitionIds.length) {
+        _hasMore = false;
+      }
     }
   }
 
@@ -209,19 +183,6 @@ class TransferCubit extends Cubit<TransferState> {
     emit(state.copyWith(transfers: filtered, status: TransferStatus.loaded));
   }
 
-  String formatDate(String dateString) {
-    try {
-      final parts = dateString.split('.');
-      if (parts.length == 3) {
-        final day = parts[0].padLeft(2, '0');
-        final month = parts[1].padLeft(2, '0');
-        final year = parts[2].substring(2);
-        return '$day.$month.$year';
-      }
-    } catch (_) {}
-    return dateString;
-  }
-
   DateTime _parseDate(String dateStr) {
     try {
       final parts = dateStr.split('.');
@@ -240,20 +201,15 @@ class TransferCubit extends Cubit<TransferState> {
     required Set<String> leagues,
     required List<String> clubName,
   }) {
-    if (season.isEmpty || season.contains('/')) {
-      selectedSeason = '';
-    } else {
-      try {
-        final start = season.substring(2);
-        final end = (int.parse(season) + 1).toString().substring(2);
-        selectedSeason = '$start/$end';
-      } catch (e) {
-        selectedSeason = '';
-      }
-    }
+    selectedSeason = season.isEmpty ? '' : '${season.substring(2)}/${(int.parse(season) + 1).toString().substring(2)}';
+
+    selectedCompetitionIds = leagues.isEmpty
+        ? allCompetitionIds.toSet()
+        : leagues.map((name) => leagueToCompetitionId[name] ?? '').where((id) => id.isNotEmpty).toSet();
 
     selectedLeagues = leagues;
     selectedClubName = clubName;
+
     loadInitialTransfers();
   }
 }

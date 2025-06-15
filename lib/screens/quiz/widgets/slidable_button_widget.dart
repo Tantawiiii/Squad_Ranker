@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../app_resource/app_colors.dart';
-import '../../../app_resource/app_text_styles.dart';
 
 class SlidableButtonWidget extends StatelessWidget {
   const SlidableButtonWidget({
@@ -12,13 +10,17 @@ class SlidableButtonWidget extends StatelessWidget {
     this.onTapRemove,
     this.bottomMargin = 16,
     this.answerIsTrue,
+    required this.positionIndex,
   });
+
   final Function(BuildContext context) onPressed;
   final Function()? onTapRemove;
   final double bottomMargin;
   final String? name;
   final String price;
   final bool? answerIsTrue;
+  final int positionIndex;
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -31,10 +33,10 @@ class SlidableButtonWidget extends StatelessWidget {
             height: 56,
             decoration: BoxDecoration(
               color: answerIsTrue == null
-                  ? AppColors.buttonBackgroundColor
+                  ? Colors.black
                   : answerIsTrue!
-                      ? AppColors.trueAnswerColor
-                      : AppColors.indecatorColor,
+                  ? Colors.green
+                  : Colors.red,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(14),
                 bottomLeft: Radius.circular(14),
@@ -43,39 +45,32 @@ class SlidableButtonWidget extends StatelessWidget {
               ),
             ),
             child: Text(
-              '1',
-              style: AppTextStyles.header16.copyWith(),
+              positionIndex.toString(),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
           ),
           Expanded(
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-              ),
-              margin: const EdgeInsets.only(
-                left: 5,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              margin: const EdgeInsets.only(left: 5),
               height: 56,
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 border: answerIsTrue == null
                     ? null
                     : Border.all(
-                        width: 2,
-                        color: answerIsTrue!
-                            ? AppColors.trueAnswerColor
-                            : AppColors.indecatorColor,
-                      ),
-                image: name == null
-                    ? const DecorationImage(
-                        image: AssetImage(
-                          "assets/images/borderBloc.png",
-                        ),
-                        fit: BoxFit.fill)
-                    : null,
+                  width: 2,
+                  color: answerIsTrue!
+                      ? Colors.green
+                      : Colors.red,
+                ),
                 color: name == null
-                    ? AppColors.leaugeElementsColor
-                    : AppColors.buttonBackgroundColor,
+                    ? Colors.grey[300]
+                    : Colors.blue[100],
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(4),
                   bottomLeft: Radius.circular(4),
@@ -88,14 +83,18 @@ class SlidableButtonWidget extends StatelessWidget {
                 children: [
                   Text(
                     name ?? '????',
-                    style: AppTextStyles.header16.copyWith(
-                      color: name == null ? AppColors.lightGray : null,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: name == null ? Colors.grey : Colors.black,
                     ),
                   ),
                   Text(
-                    '$price\$',
-                    style: AppTextStyles.header16.copyWith(
-                      color: AppColors.buttonBackgroundColor,
+                    '${_formatPrice(int.tryParse(price) ?? 0)}€',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
                     ),
                   ),
                 ],
@@ -108,16 +107,22 @@ class SlidableButtonWidget extends StatelessWidget {
               child: Container(
                 width: 33,
                 alignment: Alignment.center,
-                child: Center(
-                  child: Image.asset(
-                    "assets/images/removeIcon.png",
-                    width: 16,
-                  ),
+                child: const Center(
+                  child: Icon(Icons.close, size: 24, color: Colors.red),
                 ),
               ),
             ),
         ],
       ),
     );
+  }
+
+  String _formatPrice(int price) {
+    if (price >= 1000000) {
+      return '${(price / 1000000).toStringAsFixed(1)}M';
+    } else if (price >= 1000) {
+      return '${(price / 1000).toStringAsFixed(1)}K';
+    }
+    return price.toString();
   }
 }
