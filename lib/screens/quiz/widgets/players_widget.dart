@@ -11,60 +11,67 @@ class PlayersWidget extends StatelessWidget {
     required this.position,
     this.marginRight = 7,
     required this.choosenPlayer,
+    this.onTap,
   });
   final String name;
   final String number;
   final String position;
   final double marginRight;
   final bool choosenPlayer;
+  final VoidCallback? onTap;
+
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.only(
-        right: marginRight,
-      ),
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: choosenPlayer
-            ? AppColors.indecatorColor
-            : AppColors.buttonBackgroundColor,
-        borderRadius: BorderRadius.circular(
-          13,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: EdgeInsets.only(
+          right: marginRight,
         ),
-      ),
-      child: Column(
-        children: [
-          Stack(
-            alignment: AlignmentDirectional.center,
-            children: [
-              Image.asset(
-                'assets/images/shirt.png',
-                width: 60,
-              ),
-              Text(
-                number,
-                style: AppTextStyles.header20.copyWith(),
-              ),
-            ],
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: choosenPlayer
+              ? AppColors.indecatorColor
+              : AppColors.buttonBackgroundColor,
+          borderRadius: BorderRadius.circular(
+            13,
           ),
-          const SizedBox(
-            height: 10,
-          ),
-          Text(
-            name,
-            style: AppTextStyles.header16.copyWith(),
-          ),
-          const SizedBox(
-            height: 15,
-          ),
-          Text(
-            position,
-            style: AppTextStyles.header16.copyWith(
-              fontSize: 12,
-              color: choosenPlayer ? AppColors.background : AppColors.lightGray,
+        ),
+        child: Column(
+          children: [
+            Stack(
+              alignment: AlignmentDirectional.center,
+              children: [
+                Image.asset(
+                  'assets/images/shirt.png',
+                  width: 60,
+                ),
+                Text(
+                  number,
+                  style: AppTextStyles.header20.copyWith(),
+                ),
+              ],
             ),
-          ),
-        ],
+            const SizedBox(
+              height: 10,
+            ),
+            Text(
+              name,
+              style: AppTextStyles.header16.copyWith(),
+            ),
+            const SizedBox(
+              height: 15,
+            ),
+            Text(
+              position,
+              style: AppTextStyles.header16.copyWith(
+                fontSize: 12,
+                color: choosenPlayer ? AppColors.background : AppColors.lightGray,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

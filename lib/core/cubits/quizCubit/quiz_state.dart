@@ -1,11 +1,11 @@
 class QuizState {
-  final bool isConnected;
+  final List<Map<String, dynamic>> players;
+  final int score;
+  final bool isLoading;
 
-  QuizState({this.isConnected = true});
-
-  QuizState copyWith({bool? isConnected}) {
-    return QuizState(
-      isConnected: isConnected ?? this.isConnected,
-    );
-  }
+  QuizState({
+    this.players = const [],
+    this.score = 0,
+    this.isLoading = false,
+  });
 }

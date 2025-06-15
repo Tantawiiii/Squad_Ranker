@@ -26,7 +26,7 @@ class Application extends StatelessWidget {
         ),
         BlocProvider<TransferCubit>(
             create: (BuildContext context) =>
-                TransferCubit(ApiService(), competitionIds)),
+                TransferCubit(ApiService(), leagueToCompetitionId.values.toList())),
         BlocProvider<LeaugeCubit>(
           create: (BuildContext context) => LeaugeCubit(),
         ),
@@ -37,7 +37,8 @@ class Application extends StatelessWidget {
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         theme: AppTheme.themeData,
-        routes: AppRoute.routes,
+        onGenerateRoute: AppRoute.onGenerateRoute,
+        initialRoute: '/',
       ),
     );
   }

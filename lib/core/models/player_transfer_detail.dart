@@ -9,6 +9,8 @@ class PlayerTransferDetail {
   final String transferFeeValue;
   final String? transferFeeCurrency;
   final String? transferFeeNumeral;
+  final String? fromCompetition;
+  final String? toCompetition;
   final String? playerName;
   final String? playerImage;
   final String? countryID;
@@ -30,6 +32,8 @@ class PlayerTransferDetail {
     required this.transferFeeValue,
     this.transferFeeCurrency,
     this.transferFeeNumeral,
+     this.fromCompetition,
+     this.toCompetition,
     this.playerName,
     this.playerImage,
     this.countryID,
@@ -43,25 +47,27 @@ class PlayerTransferDetail {
 
   factory PlayerTransferDetail.fromJson(Map<String, dynamic> json) {
     return PlayerTransferDetail(
-      playerID: json['playerID'] ?? '',
-      oldClubID: json['oldClubID'] ?? '',
+      playerID: json['playerID'],
+      oldClubID: json['oldClubID'],
       oldClubName: json['oldClubName'] ?? '',
-      oldClubImage: json['oldClubImage'] ?? '',
-      newClubID: json['newClubID'] ?? '',
+      oldClubImage: json['oldClubImage'],
+      newClubID: json['newClubID'],
       newClubName: json['newClubName'] ?? '',
-      newClubImage: json['newClubImage'] ?? '',
+      newClubImage: json['newClubImage'],
       transferFeeValue: json['transferFeeValue'] ?? '',
-      transferFeeCurrency: json['transferFeeCurrency'] ?? '',
-      transferFeeNumeral: json['transferFeeNumeral'] ?? '',
-      playerName: json['playerName'] ?? '',
-      playerImage: json['playerImage'] ?? '',
-      countryID: json['countryID'] ?? '',
+      transferFeeCurrency: json['transferFeeCurrency'],
+      transferFeeNumeral: json['transferFeeNumeral'],
+      fromCompetition: json['fromCompetitionID'] ?? '',
+      toCompetition: json['toCompetitionID'] ?? '',
+      playerName: json['playerName'],
+      playerImage: json['playerImage'],
+      countryID: json['countryID'],
       countryImage: json['countryImage'] ?? '',
-      loan: json['loan'] ?? '',
-      date: json['date'] ?? '',
-      season: json['season'] ?? '',
-      newClubCountryName: json['newClubCountryName'] ?? '',
-      newClubCountryImage: json['newClubCountryImage'] ?? '',
+      loan: json['loan'],
+      date: json['date'],
+      season: json['season'],
+      newClubCountryName: json['newClubCountryName'],
+      newClubCountryImage: json['newClubCountryImage'],
     );
   }
 }
