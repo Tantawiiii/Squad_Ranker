@@ -9,6 +9,7 @@ import 'core/cubits/leaugeCubit/leauge_cubit.dart';
 import 'core/cubits/quizCubit/quiz_cubit.dart';
 import 'core/cubits/settingsCubit/settings_cubit.dart';
 import 'core/cubits/transfers/transfer_cubit.dart';
+import 'core/database/shared_score_helper.dart';
 import 'core/service/api_service.dart';
 
 class Application extends StatelessWidget {
@@ -31,7 +32,7 @@ class Application extends StatelessWidget {
           create: (BuildContext context) => LeaugeCubit(),
         ),
         BlocProvider<QuizCubit>(
-          create: (BuildContext context) => QuizCubit(),
+          create: (BuildContext context) => QuizCubit(ApiService(),   SharedPreferencesService(),),
         ),
       ],
       child: MaterialApp(

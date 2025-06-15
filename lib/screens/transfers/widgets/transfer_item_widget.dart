@@ -2,9 +2,7 @@ import 'package:app_b_804/app_resource/app_images.dart';
 import 'package:app_b_804/app_resource/app_text_styles.dart';
 import 'package:bounce/bounce.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../app_resource/app_colors.dart';
-import '../../../core/cubits/transfers/transfer_cubit.dart';
 import '../../../core/extensions/app_size_extensions.dart';
 import '../../../core/models/player_transfer_detail.dart';
 
@@ -18,7 +16,7 @@ class TransferCard extends StatelessWidget {
 
     return Bounce(
       onTap: (){
-        print("fromCompetition: ${transfer.fromCompetition}" );
+        print("fromCompetition: ${transfer.fromCompetitionID}" );
         Navigator.pushNamed(
           context,
           'playerDetails',
@@ -63,7 +61,7 @@ class TransferCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    context.read<TransferCubit>().formatDate(transfer.date!),
+                   transfer.formattedDate ?? "N/A",
                     style: AppTextStyles.header16.copyWith(fontSize: 12),
                   ),
                 ],

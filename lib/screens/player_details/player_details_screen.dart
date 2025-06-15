@@ -11,7 +11,6 @@ import '../../core/models/player_profile.dart';
 import '../../core/models/player_transfer_detail.dart';
 import '../../core/service/api_service.dart';
 import '../../widgets/app_bar.dart';
-import '../transfers/widgets/transfer_item_widget.dart';
 
 
 class PlayerDetailsScreen extends StatefulWidget {
