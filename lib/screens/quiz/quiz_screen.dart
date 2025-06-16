@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../app_resource/app_colors.dart';
+import '../../app_resource/app_strings.dart';
+import '../../app_resource/app_text_styles.dart';
+import '../../core/cubits/leaugeCubit/leauge_cubit.dart';
+import '../../core/cubits/leaugeCubit/leauge_state.dart';
 import '../../core/cubits/quizCubit/quiz_cubit.dart';
 import '../../core/cubits/quizCubit/quiz_state.dart';
 import '../../core/models/player_model.dart';
-import '../../app_resource/app_colors.dart';
-import '../../app_resource/app_text_styles.dart';
 import '../../widgets/app_bar.dart';
 import 'widgets/players_widget.dart';
 import 'widgets/slidable_button_widget.dart';
+import 'widgets/show_alert_dailog.dart';
 
 class QuizScreen extends StatefulWidget {
   const QuizScreen({super.key});
@@ -29,7 +33,18 @@ class _QuizScreenState extends State<QuizScreen> {
     super.initState();
     hasCheckedAnswers = false;
     quizCubit = context.read<QuizCubit>();
-    quizCubit.initQuizWithShortInfo();
+
+    // Check if enough leagues are selected
+    final selectedLeagues = context.read<LeaugeCubit>().state.sellectedLeauges;
+    if (selectedLeagues.length >= 2) {
+      quizCubit.initQuizWithShortInfo();
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select at least 2 leagues')),
+        );
+      });
+    }
   }
 
   void addPlayer(Player player) {
@@ -54,7 +69,7 @@ class _QuizScreenState extends State<QuizScreen> {
 
   void checkAnswer() {
     if (selectedPlayers.every((player) => player != null)) {
-      quizCubit.checkAnswers(selectedPlayers);
+      quizCubit.checkAnswers(selectedPlayers.cast<Player>());
       setState(() {
         hasCheckedAnswers = true;
         showScoreWidget = true;
@@ -67,11 +82,12 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   void resetQuiz() {
-    quizCubit.startNewQuiz();
     setState(() {
-      showScoreWidget = false;
+      selectedPlayers = List.filled(5, null);
       hasCheckedAnswers = false;
+      showScoreWidget = false;
     });
+    quizCubit.startNewQuiz();
   }
 
   int getSelectedPlayersCount() {
@@ -80,184 +96,241 @@ class _QuizScreenState extends State<QuizScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<QuizCubit, QuizState>(
+    return BlocListener<LeaugeCubit, LeaugeState>(
       listener: (context, state) {
-        if (state is QuizError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message)),
-          );
-        } else if (state is QuizLoaded) {
-          setState(() {
-            availablePlayers = List.from(state.players);
-            selectedPlayers = List.filled(5, null);
-            hasCheckedAnswers = false;
-            roundScore = null;
-          });
-        } else if (state is QuizAnswersChecked) {
-          setState(() {
-            roundScore = state.roundScore;
-          });
+        // Reload quiz when selected leagues change
+        if (state.sellectedLeauges.length >= 2) {
+          resetQuiz();
         }
       },
-      builder: (context, state) {
-        return Scaffold(
-          body: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              CustomAppBar(
-                title: 'Squad Ranker',
-                onBack: () => Navigator.pushNamed(context, 'homeScreen'),
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.only(
-                          left: 16,
-                          right: 16,
-                          top: MediaQuery.of(context).size.width / 14,
-                        ),
-                        child: Column(
-                          children: List.generate(5, (index) {
-                            final player = selectedPlayers[index];
-                            return SlidableButtonWidget(
-                              positionIndex: index + 1,
-                              onPressed: (context) {},
-                              name: player?.name,
-                              price: player?.marketValue.toString() ?? '0',
-                              answerIsTrue: hasCheckedAnswers
-                                  ? state is QuizAnswersChecked
-                                  ? state.results.length > index
-                                  ? state.results[index]
-                                  : false
-                                  : false
-                                  : null,
-                              onTapRemove: hasCheckedAnswers ? null : () => removePlayer(index),
-                            );
-                          }),
-                        ),
-                      ),
-                      if (state is QuizLoaded &&
-                          getSelectedPlayersCount() < 5 &&
-                          !hasCheckedAnswers)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: availablePlayers.map((player) {
-                                return PlayersWidget(
-                                  name: player.name,
-                                  position: player.position ?? "N/A",
-                                  number: player.number ?? '?',
-                                 // imageUrl: player.imageUrl,
-                                  choosenPlayer: false,
-                                  onTap: hasCheckedAnswers ? null : () => addPlayer(player),
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                        ),
-                      if (state is QuizLoaded && availablePlayers.isEmpty && !hasCheckedAnswers)
-                        const Padding(
-                          padding: EdgeInsets.all(16),
-                          child: Text('No players available'),
-                        ),
-                      if (state is QuizLoading)
-                        const Padding(
-                          padding: EdgeInsets.all(16),
-                          child: CircularProgressIndicator(),
-                        ),
-                      if (getSelectedPlayersCount() >= 5 && !hasCheckedAnswers)
-                        const Padding(
-                          padding: EdgeInsets.all(16),
-                          child: Text(
-                            'All required players selected (5/5)',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
+      child: BlocConsumer<QuizCubit, QuizState>(
+        listener: (context, state) {
+          if (state is QuizError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message)),
+            );
+          } else if (state is QuizLoaded) {
+            setState(() {
+              availablePlayers = List.from(state.players);
+              selectedPlayers = List.filled(5, null);
+              hasCheckedAnswers = false;
+              roundScore = null;
+            });
+          } else if (state is QuizAnswersChecked) {
+            setState(() {
+              roundScore = state.roundScore;
+            });
+          }
+        },
+        builder: (context, state) {
+          final selectedLeagues = context.read<LeaugeCubit>().state.sellectedLeauges;
+
+          return Scaffold(
+            body: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CustomAppBar(
+                  title: 'Squad Ranker',
+                  onBack: () async {
+                    final shouldExit = await showExitQuizDialog(context);
+                    if (shouldExit) {
+                      Navigator.pushNamed(context, 'homeScreen');
+                    }
+                  },
                 ),
-              ),
-              if (showScoreWidget && roundScore != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 25),
-                  color: AppColors.scoreContainer,
+
+                if (selectedLeagues.length < 2)
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'Please select at least 2 leagues from leagues screen',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ),
+
+                Expanded(
+                  child: selectedLeagues.length >= 2
+                      ? _buildQuizContent(state)
+                      : Center(child: Text('Select more leagues to play')),
+                ),
+
+                if (showScoreWidget && roundScore != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 25),
+                    color: AppColors.scoreContainer,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '+$roundScore',
+                          style: AppTextStyles.header48.copyWith(
+                            fontSize: 32,
+                            color: AppColors.buttonBackgroundColor,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Image.asset(
+                          'assets/images/Star 1.png',
+                          width: 35,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                if (!hasCheckedAnswers)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      AppStrings.organizePlayersByTheir,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.hinitText,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+
+                Padding(
+                  padding: const EdgeInsets.only(
+                      top: 8, bottom: 32, right: 16, left: 16),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        '+$roundScore',
-                        style: AppTextStyles.header48.copyWith(
-                          fontSize: 32,
-                          color: AppColors.buttonBackgroundColor,
+                      if (!hasCheckedAnswers)
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: getSelectedPlayersCount() == 5
+                                ? checkAnswer
+                                : null,
+                            style: ButtonStyle(
+                              backgroundColor: MaterialStateProperty.all(
+                                getSelectedPlayersCount() == 5
+                                    ? AppColors.indecatorColor
+                                    : AppColors.lightGray,
+                              ),
+                              padding: MaterialStateProperty.all(
+                                const EdgeInsets.symmetric(vertical: 16),
+                              ),
+                            ),
+                            child: Text(
+                              AppStrings.check,
+                              style: TextStyle(
+                                fontSize: 24,
+                                color: getSelectedPlayersCount() == 5
+                                    ? AppColors.white
+                                    : AppColors.hinitText,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      Image.asset(
-                        'assets/images/Star 1.png',
-                        width: 35,
-                      ),
+                      if (hasCheckedAnswers)
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: resetQuiz,
+                            style: ButtonStyle(
+                              backgroundColor: MaterialStateProperty.all(
+                                  AppColors.indecatorColor),
+                              padding: MaterialStateProperty.all(
+                                const EdgeInsets.symmetric(vertical: 16),
+                              ),
+                            ),
+                            child: const Text(
+                              AppStrings.newQuiz,
+                              style: TextStyle(
+                                fontSize: 24,
+                                color: AppColors.background,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildQuizContent(QuizState state) {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: MediaQuery.of(context).size.width / 14,
+            ),
+            child: Column(
+              children: List.generate(5, (index) {
+                final player = selectedPlayers[index];
+                return SlidableButtonWidget(
+                  positionIndex: index + 1,
+                  onPressed: (context) {},
+                  name: player?.name,
+                  price: player?.marketValue.toString() ?? '0',
+                  answerIsTrue: hasCheckedAnswers
+                      ? state is QuizAnswersChecked
+                      ? state.results.length > index
+                      ? state.results[index]
+                      : false
+                      : false
+                      : null,
+                  onTapRemove: hasCheckedAnswers
+                      ? null
+                      : () => removePlayer(index),
+                );
+              }),
+            ),
+          ),
+
+          if (state is QuizLoaded &&
+              getSelectedPlayersCount() < 5 &&
+              !hasCheckedAnswers)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
                 child: Row(
-                  children: [
-                    if (!hasCheckedAnswers)
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: checkAnswer,
-                          style: ButtonStyle(
-                            backgroundColor: MaterialStateProperty.all(Colors.grey[300]),
-                            padding: MaterialStateProperty.all(
-                              const EdgeInsets.symmetric(vertical: 16),
-                            ),
-                          ),
-                          child: const Text(
-                            'CHECK',
-                            style: TextStyle(
-                              fontSize: 24,
-                              color: Colors.black,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    if (hasCheckedAnswers)
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: resetQuiz,
-                          style: ButtonStyle(
-                            backgroundColor: MaterialStateProperty.all(Colors.blue[100]),
-                            padding: MaterialStateProperty.all(
-                              const EdgeInsets.symmetric(vertical: 16),
-                            ),
-                          ),
-                          child: const Text(
-                            'NEW QUIZ',
-                            style: TextStyle(
-                              fontSize: 24,
-                              color: Colors.black,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
+                  children: availablePlayers.map((player) {
+                    return PlayersWidget(
+                      name: player.name,
+                      position: player.position ?? "N/A",
+                      number: player.number ?? '?',
+                      choosenPlayer: false,
+                      onTap: hasCheckedAnswers
+                          ? null
+                          : () => addPlayer(player),
+                    );
+                  }).toList(),
                 ),
               ),
-            ],
-          ),
-        );
-      },
+            ),
+
+          if (state is QuizLoaded && availablePlayers.isEmpty && !hasCheckedAnswers)
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text('No players available'),
+            ),
+
+          if (state is QuizLoading)
+            const Padding(
+                padding: EdgeInsets.all(16),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    backgroundColor: AppColors.indecatorColor,
+                    color: AppColors.gray,
+                    strokeAlign: 4,
+                  ),
+                )),
+        ],
+      ),
     );
   }
 }

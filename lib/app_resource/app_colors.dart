@@ -18,4 +18,7 @@ class AppColors {
   static const Color organizePlayersByTheir = Color(0xff656363);
   static const Color scoreContainer = Color(0xffFFF2D4);
   static const Color trueAnswerColor = Color(0xff00B822);
+
+
+
 }

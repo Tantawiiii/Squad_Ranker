@@ -10,7 +10,7 @@ class TransferCubit extends Cubit<TransferState> {
   final List<String> allCompetitionIds;
   Set<String> selectedCompetitionIds = {};
   List<PlayerTransferDetail> _transfers = [];
-  String selectedSeason = '';
+  Set<String> selectedSeasons = {};
   Set<String> selectedLeagues = {};
   List<String> selectedClubName = [];
   final int _limit = 20;
@@ -31,7 +31,6 @@ class TransferCubit extends Cubit<TransferState> {
   bool get isLoadingMore => _isLoadingMore;
 
   TransferCubit(this.apiService, this.allCompetitionIds) : super(TransferState()) {
-    // Initialize with all competition IDs
     selectedCompetitionIds = allCompetitionIds.toSet();
 
     searchController.addListener(() {
@@ -83,7 +82,6 @@ class TransferCubit extends Cubit<TransferState> {
     emit(state.copyWith(status: TransferStatus.loading, transfers: _transfers));
 
     try {
-      // Convert set to list for indexing
       final competitionIdsList = selectedCompetitionIds.toList();
 
       while (_currentCompetitionIndex < competitionIdsList.length) {
@@ -107,11 +105,12 @@ class TransferCubit extends Cubit<TransferState> {
           final history = await apiService.getPlayerTransferHistory(transfer.playerID);
 
           for (final detail in history) {
-
-            if (selectedSeason.isNotEmpty && detail.season != selectedSeason) {
+            // Filter by seasons
+            if (selectedSeasons.isNotEmpty && !selectedSeasons.contains(detail.season)) {
               continue;
             }
 
+            // Filter by club name
             if (selectedClubName.isNotEmpty &&
                 !selectedClubName.any((club) =>
                 detail.newClubName.toLowerCase().contains(club.toLowerCase()) ||
@@ -140,7 +139,6 @@ class TransferCubit extends Cubit<TransferState> {
         break;
       }
 
-      // Sort by date
       _transfers.sort((a, b) => _parseDate(b.date!).compareTo(_parseDate(a.date!)));
 
       emit(state.copyWith(
@@ -197,11 +195,15 @@ class TransferCubit extends Cubit<TransferState> {
   }
 
   void applyFilter({
-    required String season,
+    required Set<String> seasons,
     required Set<String> leagues,
     required List<String> clubName,
   }) {
-    selectedSeason = season.isEmpty ? '' : '${season.substring(2)}/${(int.parse(season) + 1).toString().substring(2)}';
+    // Convert seasons to the format you need (e.g., "22/23")
+    selectedSeasons = seasons.map((season) {
+      if (season.isEmpty) return '';
+      return '${season.substring(2)}/${(int.parse(season) + 1).toString().substring(2)}';
+    }).where((s) => s.isNotEmpty).toSet();
 
     selectedCompetitionIds = leagues.isEmpty
         ? allCompetitionIds.toSet()

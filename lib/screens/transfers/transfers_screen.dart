@@ -62,30 +62,30 @@ class _TransferScreenState extends State<TransferScreen> {
             ),
             BlocBuilder<TransferCubit, TransferState>(
               builder: (context, state) {
+                final cubit = context.read<TransferCubit>();
+                final hasActiveFilters = cubit.selectedSeasons.isNotEmpty ||
+                    cubit.selectedLeagues.isNotEmpty ||
+                    cubit.selectedClubName.isNotEmpty;
+
                 return SearchBarWidget(
                   controller: cubit.searchController,
                   focusNode: cubit.searchFocusNode,
                   isFocused: state.isSearchFocused,
+                  hasActiveFilters: hasActiveFilters,
                   onChanged: cubit.searchTransfersByName,
                   onClear: cubit.searchController.clear,
                   onTap: () {
-                    final cubit = context.read<TransferCubit>();
-                    final season = cubit.selectedSeason;
-                    final safeSeason = season.isNotEmpty && season.length >= 4
-                        ? season.substring(0, 4)
-                        : '';
-
                     showModalBottomSheet(
                       context: context,
                       backgroundColor: AppColors.background,
                       isScrollControlled: true,
                       builder: (_) => FilterBottomSheet(
-                        selectedSeason: safeSeason,
+                        selectedSeasons: cubit.selectedSeasons,
                         selectedLeagues: cubit.selectedLeagues,
                         selectedClubName: cubit.selectedClubName,
-                        onApply: (season, leagues, clubName) {
+                        onApply: (seasons, leagues, clubName) {
                           context.read<TransferCubit>().applyFilter(
-                            season: season,
+                            seasons: seasons,
                             leagues: leagues,
                             clubName: clubName,
                           );
