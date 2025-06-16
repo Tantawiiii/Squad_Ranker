@@ -4,14 +4,14 @@ import '../../../app_resource/app_colors.dart';
 import '../../../app_resource/competition_ids.dart';
 
 class FilterBottomSheet extends StatefulWidget {
-  final String selectedSeason;
+  final Set<String> selectedSeasons;
   final Set<String> selectedLeagues;
   final List<String> selectedClubName;
-  final Function(String season, Set<String> leagues, List<String> clubName)
+  final Function(Set<String> seasons, Set<String> leagues, List<String> clubName)
   onApply;
 
   const FilterBottomSheet({
-    required this.selectedSeason,
+    required this.selectedSeasons,
     required this.selectedLeagues,
     required this.selectedClubName,
     required this.onApply,
@@ -23,7 +23,7 @@ class FilterBottomSheet extends StatefulWidget {
 }
 
 class _FilterBottomSheetState extends State<FilterBottomSheet> {
-  late String _season;
+  late Set<String> _seasons;
   late Set<String> _leagues;
   late List<String> _selectedClubNames;
 
@@ -33,24 +33,28 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   @override
   void initState() {
     super.initState();
-    _season = widget.selectedSeason;
+    _seasons = Set.from(widget.selectedSeasons);
     _leagues = Set.from(widget.selectedLeagues);
     _selectedClubNames = List.from(widget.selectedClubName);
+  }
 
-    print('Available leagues: $leagues');
-    print('Currently selected leagues: $_leagues');
+  void _toggleSeason(String season) {
+    setState(() {
+      if (_seasons.contains(season)) {
+        _seasons.remove(season);
+      } else {
+        _seasons.add(season);
+      }
+    });
   }
 
   void _toggleLeague(String league) {
     setState(() {
       if (_leagues.contains(league)) {
         _leagues.remove(league);
-        print('Removed league: $league');
       } else {
         _leagues.add(league);
-        print('Added league: $league');
       }
-      print('Current selected leagues: $_leagues');
     });
   }
 
@@ -66,7 +70,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
 
   void _clearAllFilters() {
     setState(() {
-      _season = '';
+      _seasons.clear();
       _leagues.clear();
       _selectedClubNames.clear();
     });
@@ -103,8 +107,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               ),
               GestureDetector(
                 onTap: () {
-                  print('🎯 Applying filter with leagues: $_leagues');
-                  widget.onApply(_season, _leagues, _selectedClubNames);
+                  widget.onApply(_seasons, _leagues, _selectedClubNames);
                   Navigator.pop(context);
                 },
                 child: Text(
@@ -118,8 +121,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             color: AppColors.dividerColor,
           ),
 
-          // Clear all button
-          if (_season.isNotEmpty || _leagues.isNotEmpty || _selectedClubNames.isNotEmpty)
+          if (_seasons.isNotEmpty || _leagues.isNotEmpty || _selectedClubNames.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 8, bottom: 8),
               child: GestureDetector(
@@ -143,20 +145,40 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
 
           Padding(
             padding: const EdgeInsets.only(top: 15, bottom: 8),
-            child: Text(
-              "Season",
-              style: AppTextStyles.header14,
+            child: Row(
+              children: [
+                Text(
+                  "Seasons",
+                  style: AppTextStyles.header14,
+                ),
+                if (_seasons.isNotEmpty) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.buttonBackgroundColor,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '${_seasons.length}',
+                      style: AppTextStyles.header14.copyWith(
+                        fontSize: 10,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
           Wrap(
             spacing: 8,
             children: seasons.map((season) {
-              final isSelected = _season == season;
+              final isSelected = _seasons.contains(season);
               return GestureDetector(
-                onTap: () => setState(() => _season = season),
+                onTap: () => _toggleSeason(season),
                 child: Container(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? AppColors.buttonBackgroundColor
@@ -219,8 +241,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     return GestureDetector(
                       onTap: () => _toggleLeague(league),
                       child: Container(
-                        padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
                           color: isSelected
                               ? AppColors.buttonBackgroundColor
@@ -243,8 +264,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                   GestureDetector(
                     onTap: _toggleClubName,
                     child: Container(
-                      padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
                         color: clubSelected
                             ? AppColors.buttonBackgroundColor

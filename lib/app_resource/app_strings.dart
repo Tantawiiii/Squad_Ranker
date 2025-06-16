@@ -19,6 +19,8 @@ class AppStrings {
   static const String playersInTheQuizWill =
       'Players in the quiz will be only from the selected\nleagues.';
   static const String squadRanker = 'Squad Ranker';
-  static const String organizePlayersByTheir =
-      'Organize players by their latest market value';
+  static const String organizePlayersByTheir = 'Organize players by their latest market value';
+  static const String exit = "Exit";
+  static const String cancel = "Cancel";
+  static const String alertExitContent = "Are you sure you want to leave, this quiz will be lost.";
 }

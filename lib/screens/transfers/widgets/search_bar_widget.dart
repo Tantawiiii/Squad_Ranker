@@ -12,6 +12,7 @@ class SearchBarWidget extends StatelessWidget {
   final FocusNode focusNode;
   final VoidCallback onClear;
   final bool isFocused;
+  final bool hasActiveFilters;
 
   const SearchBarWidget({
     super.key,
@@ -21,6 +22,7 @@ class SearchBarWidget extends StatelessWidget {
     required this.focusNode,
     required this.onClear,
     required this.isFocused,
+    required this.hasActiveFilters,
   });
 
   @override
@@ -51,19 +53,19 @@ class SearchBarWidget extends StatelessWidget {
                   ),
                 ),
                 prefixIconConstraints:
-                    const BoxConstraints(minWidth: 0, minHeight: 0),
+                const BoxConstraints(minWidth: 0, minHeight: 0),
                 suffixIcon: hasText
                     ? IconButton(
-                        icon: Image.asset(
-                          AppImages.iconClear,
-                          width: 16,
-                          height: 16,
-                        ),
-                        onPressed: onClear,
-                      )
+                  icon: Image.asset(
+                    AppImages.iconClear,
+                    width: 16,
+                    height: 16,
+                  ),
+                  onPressed: onClear,
+                )
                     : null,
                 suffixIconConstraints:
-                    const BoxConstraints(minWidth: 0, minHeight: 0),
+                const BoxConstraints(minWidth: 0, minHeight: 0),
                 hintText: AppStrings.hintText,
                 hintStyle: AppTextStyles.header14.copyWith(
                   color: AppColors.hinitText,
@@ -87,16 +89,33 @@ class SearchBarWidget extends StatelessWidget {
             const SizedBox(width: 13),
             GestureDetector(
               onTap: onTap,
-              child: Container(
-                height: 48,
-                width: 48,
-                padding: const EdgeInsets.all(16),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: AppColors.searchBarColor,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Image.asset(AppImages.filterIcon),
+              child: Stack(
+                children: [
+                  Container(
+                    height: 48,
+                    width: 48,
+                    padding: const EdgeInsets.all(16),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: AppColors.searchBarColor,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Image.asset(AppImages.filterIcon),
+                  ),
+                  if (hasActiveFilters)
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
           ],

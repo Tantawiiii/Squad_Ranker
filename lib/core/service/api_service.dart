@@ -75,7 +75,6 @@ class ApiService {
       if (headerInfo != null) {
         return Player(
           id: playerId,
-       //   playerID: playerId,
           name: headerInfo['name'] ?? 'Unknown Player',
           marketValue: marketValue,
           position: headerInfo['position'],

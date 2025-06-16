@@ -1,9 +1,5 @@
-import 'package:json_annotation/json_annotation.dart';
-
-part 'league_model.g.dart';
-
-@JsonSerializable()
 class LeagueModel {
+  final int index;
   final String name;
   final String id;
   final String country;
@@ -12,15 +8,56 @@ class LeagueModel {
   final bool isNew;
 
   LeagueModel({
+    required this.index,
     required this.name,
     required this.id,
     required this.country,
     required this.score,
-    this.isOpened = false,
-    this.isNew = false,
+    required this.isOpened,
+    required this.isNew,
   });
 
-  factory LeagueModel.fromJson(Map<String, dynamic> json) => _$LeagueModelFromJson(json);
+  factory LeagueModel.fromJson(Map<String, dynamic> json) {
+    return LeagueModel(
+      index: json['index'],
+      name: json['name'],
+      id: json['id'],
+      country: json['country'],
+      score: json['score'],
+      isOpened: json['isOpened'],
+      isNew: json['isNew'],
+    );
+  }
 
-  Map<String, dynamic> toJson() => _$LeagueModelToJson(this);
+  Map<String, dynamic> toJson() {
+    return {
+      'index': index,
+      'name': name,
+      'id': id,
+      'country': country,
+      'score': score,
+      'isOpened': isOpened,
+      'isNew': isNew,
+    };
+  }
+
+  LeagueModel copyWith({
+    int? index,
+    String? name,
+    String? id,
+    String? country,
+    int? score,
+    bool? isOpened,
+    bool? isNew,
+  }) {
+    return LeagueModel(
+      index: index ?? this.index,
+      name: name ?? this.name,
+      id: id ?? this.id,
+      country: country ?? this.country,
+      score: score ?? this.score,
+      isOpened: isOpened ?? this.isOpened,
+      isNew: isNew ?? this.isNew,
+    );
+  }
 }
